@@ -1,0 +1,7 @@
+{
+    "random_mh.general.you_are_speedrunner": "You are speedrunner!",
+    "random_mh.general.you_are_hunter": "You are hunter!",
+    "commands.random_mh.role.failure.not_a_player": "You are not a player!",
+    "commands.random_mh.start.success": "Manhunt is starting!",
+    "commands.random_mh.stop.success": "Manhunt was stoped!"
+}

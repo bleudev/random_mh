@@ -1,0 +1,34 @@
+{
+    "schemaVersion": 1,
+    "id": "random_mh",
+    "version": "${version}",
+    "name": "Random ManHunt",
+    "description": "",
+    "authors": [
+        ""
+    ],
+    "contact": {
+        "homepage": ""
+    },
+    "license": "All-Rights-Reserved",
+    "icon": "assets/random_mh/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.bleudev.random_mh.fabric.RandomMhFabric"
+        ],
+        "client": [
+            "com.bleudev.random_mh.fabric.client.RandomMhFabricClient"
+        ]
+    },
+    "mixins": [
+        "random_mh.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.18.0",
+        "minecraft": "~1.21.11",
+        "java": ">=21",
+        "architectury": ">=19.0.1",
+        "fabric-api": "*"
+    }
+}
