@@ -23,6 +23,9 @@ public class RandomMhClient {
     public static void init() {
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, RolePayload.TYPE, RolePayload.STREAM_CODEC, (payload, ctx) -> {
             currentRole = payload.role();
+            var c = currentRole.getTitleComponent();
+            if (!c.getString().isEmpty())
+                ctx.getPlayer().displayClientMessage(c, false);
         });
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, TickRandomMhBossBarPayload.TYPE, TickRandomMhBossBarPayload.STREAM_CODEC, (payload, ctx) -> {
             randomMhBossBarTick = payload.tick();

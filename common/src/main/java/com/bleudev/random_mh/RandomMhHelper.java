@@ -27,23 +27,28 @@ public class RandomMhHelper {
     public static final Component BOSSBAR_HUNTER_COMPONENT = Component.literal("Find speedrunner!");
 
     public enum MhRole {
-        NULL("null", Component.empty(), BossEvent.BossBarColor.WHITE),
-        SPEEDRUNNER("speedrunner", BOSSBAR_SPEEDRUNNER_COMPONENT, BossEvent.BossBarColor.BLUE),
-        HUNTER("hunter", BOSSBAR_HUNTER_COMPONENT, BossEvent.BossBarColor.RED);
+        NULL("null", Component.empty(), Component.empty(), BossEvent.BossBarColor.WHITE),
+        SPEEDRUNNER("speedrunner", SPEEDRUNNER_COMPONENT, BOSSBAR_SPEEDRUNNER_COMPONENT, BossEvent.BossBarColor.BLUE),
+        HUNTER("hunter", HUNTER_COMPONENT, BOSSBAR_HUNTER_COMPONENT, BossEvent.BossBarColor.RED);
 
         private final String name;
+        private final Component titleComponent;
         private final Component bossBarComponent;
         private final BossEvent.BossBarColor bossBarColor;
-        MhRole(String name, Component bossBarComponent, BossEvent.BossBarColor bossBarColor) {
+        MhRole(String name, Component titleComponent, Component bossBarComponent, BossEvent.BossBarColor bossBarColor) {
             this.name = name;
+            this.titleComponent = titleComponent;
             this.bossBarComponent = bossBarComponent;
             this.bossBarColor = bossBarColor;
         }
         public String asString() {
-            return this.name;
+            return name;
+        }
+        public Component getTitleComponent() {
+            return titleComponent;
         }
         public Component getBossBarComponent() {
-            return this.bossBarComponent;
+            return bossBarComponent;
         }
         public BossEvent.BossBarColor getBossBarColor() {
             return bossBarColor;
@@ -88,12 +93,12 @@ public class RandomMhHelper {
         players.forEach(pl -> {
             if (pl.getRandom().nextFloat() <= (float) maxSpeedrunnersCount.get() / playersCount.get()) {
                 speedrunners.add(pl);
-                pl.connection.send(new ClientboundSetTitleTextPacket(SPEEDRUNNER_COMPONENT));
+                pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.SPEEDRUNNER.getTitleComponent()));
                 NetworkManager.sendToPlayer(pl, new RolePayload(MhRole.SPEEDRUNNER));
                 maxSpeedrunnersCount.getAndDecrement();
             } else {
                 hunters.add(pl);
-                pl.connection.send(new ClientboundSetTitleTextPacket(HUNTER_COMPONENT));
+                pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.HUNTER.getTitleComponent()));
                 NetworkManager.sendToPlayer(pl, new RolePayload(MhRole.HUNTER));
             }
             playersCount.getAndDecrement();
@@ -127,6 +132,7 @@ public class RandomMhHelper {
 
     public static MhRole getRole(ServerPlayer player) {
         if (speedrunners.contains(player)) return MhRole.SPEEDRUNNER;
-        return MhRole.HUNTER;
+        else if (hunters.contains(player)) return MhRole.HUNTER;
+        return MhRole.NULL;
     }
 }

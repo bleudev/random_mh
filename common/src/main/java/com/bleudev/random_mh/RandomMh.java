@@ -13,9 +13,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
-import static com.bleudev.random_mh.RandomMhHelper.HUNTER_COMPONENT;
-import static com.bleudev.random_mh.RandomMhHelper.SPEEDRUNNER_COMPONENT;
-
 public final class RandomMh {
     public static final String MOD_ID = "random_mh";
 
@@ -41,10 +38,9 @@ public final class RandomMh {
                             ctx.getSource().sendFailure(Component.translatable("commands.random_mh.role.failure.not_a_player"));
                             return -1;
                         }
-                        if (RandomMhHelper.getRole(pl) == RandomMhHelper.MhRole.SPEEDRUNNER)
-                            ctx.getSource().sendSuccess(() -> SPEEDRUNNER_COMPONENT, false);
-                        else
-                            ctx.getSource().sendSuccess(() -> HUNTER_COMPONENT, false);
+                        var c = RandomMhHelper.getRole(pl).getTitleComponent();
+                        if (!c.getString().isEmpty())
+                            ctx.getSource().sendSuccess(() -> c, false);
                         return 1;
                     }))
                 .then(createLiteral("start")
