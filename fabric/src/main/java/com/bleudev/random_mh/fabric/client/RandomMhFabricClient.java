@@ -1,49 +1,11 @@
 package com.bleudev.random_mh.fabric.client;
 
-import com.bleudev.random_mh.RandomMhHelper;
-import com.bleudev.random_mh.mixin.client.BossHealthOverlayAccessor;
-import com.bleudev.random_mh.network.payload.RolePayload;
-import com.bleudev.random_mh.network.payload.TickRandomMhBossBarPayload;
-import dev.architectury.networking.NetworkManager;
+import com.bleudev.random_mh.client.RandomMhClient;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.gui.components.BossHealthOverlay;
-import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
-import net.minecraft.world.BossEvent;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.UUID;
 
 public final class RandomMhFabricClient implements ClientModInitializer {
-    private static final UUID randomMhBossBarUUID = UUID.randomUUID();
-
-    private static @NotNull RandomMhHelper.MhRole currentRole = RandomMhHelper.MhRole.NULL;
-    private static int randomMhBossBarTick = 0;
-    private static int randomMhBossBarDuration = 0;
-
     @Override
     public void onInitializeClient() {
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, RolePayload.TYPE, RolePayload.STREAM_CODEC, (payload, ctx) -> {
-            currentRole = payload.role();
-        });
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, TickRandomMhBossBarPayload.TYPE, TickRandomMhBossBarPayload.STREAM_CODEC, (payload, ctx) -> {
-            randomMhBossBarTick = payload.tick();
-            randomMhBossBarDuration = payload.duration();
-        });
-        ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-            var bossEvent = new BossEvent(randomMhBossBarUUID, currentRole.getBossBarComponent(), currentRole.getBossBarColor(), BossEvent.BossBarOverlay.PROGRESS) {};
-            bossEvent.setProgress((float) randomMhBossBarTick / randomMhBossBarDuration);
-            BossHealthOverlay bossHealthOverlay = mc.gui.getBossOverlay();
-            if (((BossHealthOverlayAccessor) bossHealthOverlay).random_mh$events().containsKey(randomMhBossBarUUID)) {
-                if (currentRole == RandomMhHelper.MhRole.NULL) {
-                    bossHealthOverlay.update(ClientboundBossEventPacket.createRemovePacket(randomMhBossBarUUID));
-                    return;
-                }
-                bossHealthOverlay.update(ClientboundBossEventPacket.createUpdateProgressPacket(bossEvent));
-                bossHealthOverlay.update(ClientboundBossEventPacket.createUpdateNamePacket(bossEvent));
-                bossHealthOverlay.update(ClientboundBossEventPacket.createUpdateStylePacket(bossEvent));
-            } else if (currentRole != RandomMhHelper.MhRole.NULL)
-                bossHealthOverlay.update(ClientboundBossEventPacket.createAddPacket(bossEvent));
-        });
+        RandomMhClient.init();
     }
 }
