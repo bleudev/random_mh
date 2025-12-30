@@ -1,11 +1,12 @@
 package com.bleudev.random_mh;
 
-import com.bleudev.random_mh.config.RandomMhGameConfig;
+import com.bleudev.random_mh.network.payload.S2CConfigPayload;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.EntityEvent;
 import dev.architectury.event.events.common.TickEvent;
+import dev.architectury.networking.NetworkManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -55,23 +56,12 @@ public final class RandomMh {
                 .then(createLiteral("start")
                     .requires(requireAdmin)
                     .executes(ctx -> {
-                        ctx.getSource().sendSuccess(() -> Component.translatable("commands.random_mh.start.success"), false);
-                        RandomMhHelper.start(ctx.getSource().getServer(), new RandomMhGameConfig() {
-                            @Override
-                            public int speedrunnersCount() {
-                                return 1;
-                            }
-
-                            @Override
-                            public boolean shouldRandomiseSpeedrunners() {
-                                return true;
-                            }
-
-                            @Override
-                            public int randomisationTime() {
-                                return 2000;
-                            }
-                        });
+                        var pl = ctx.getSource().getPlayer();
+                        if (pl == null) {
+                            ctx.getSource().sendFailure(Component.translatable("commands.random_mh.role.failure.not_a_player"));
+                            return -1;
+                        }
+                        NetworkManager.sendToPlayer(pl, new S2CConfigPayload());
                         return 1;
                     }))
                 .then(createLiteral("stop")

@@ -3,7 +3,9 @@ package com.bleudev.random_mh.client;
 import com.bleudev.random_mh.RandomMhHelper;
 import com.bleudev.random_mh.config.RandomMhGameConfig;
 import com.bleudev.random_mh.mixin.client.BossHealthOverlayAccessor;
+import com.bleudev.random_mh.network.payload.C2SConfigPayload;
 import com.bleudev.random_mh.network.payload.RolePayload;
+import com.bleudev.random_mh.network.payload.S2CConfigPayload;
 import com.bleudev.random_mh.network.payload.TickRandomMhBossBarPayload;
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.networking.NetworkManager;
@@ -22,7 +24,11 @@ public class RandomMhClient {
     private static int randomMhBossBarTick = 0;
     private static int randomMhBossBarDuration = 0;
 
+    private static Supplier<RandomMhGameConfig> configSupplier;
+
     public static void init(Supplier<RandomMhGameConfig> configSupplier) {
+        RandomMhClient.configSupplier = configSupplier;
+
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, RolePayload.TYPE, RolePayload.STREAM_CODEC, (payload, ctx) -> {
             currentRole = payload.role();
             var c = currentRole.getTitleComponent();
@@ -32,6 +38,9 @@ public class RandomMhClient {
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, TickRandomMhBossBarPayload.TYPE, TickRandomMhBossBarPayload.STREAM_CODEC, (payload, ctx) -> {
             randomMhBossBarTick = payload.tick();
             randomMhBossBarDuration = payload.duration();
+        });
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, S2CConfigPayload.TYPE, S2CConfigPayload.STREAM_CODEC, (payload, ctx) -> {
+            NetworkManager.sendToServer(new C2SConfigPayload(RandomMhClient.configSupplier.get()));
         });
         ClientTickEvent.CLIENT_POST.register(mc -> {
             var bossEvent = new BossEvent(randomMhBossBarUUID, currentRole.getBossBarComponent(), currentRole.getBossBarColor(), BossEvent.BossBarOverlay.PROGRESS) {};
