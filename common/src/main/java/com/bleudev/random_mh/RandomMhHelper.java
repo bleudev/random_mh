@@ -11,35 +11,46 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RandomMhHelper {
     public static final Component SPEEDRUNNER_COMPONENT = Component.translatable("random_mh.general.you_are_speedrunner").withStyle(ChatFormatting.AQUA);
     public static final Component HUNTER_COMPONENT = Component.translatable("random_mh.general.you_are_hunter").withStyle(ChatFormatting.RED);
+    public static final Component SPEEDRUNNER_WON_COMPONENT = Component.translatable("random_mh.general.won.speedrunner").withStyle(ChatFormatting.AQUA);
+    public static final Component HUNTER_WON_COMPONENT = Component.translatable("random_mh.general.won.hunter").withStyle(ChatFormatting.RED);
+    public static final Component SPEEDRUNNER_LOSE_COMPONENT = Component.translatable("random_mh.general.lose.speedrunner").withStyle(ChatFormatting.AQUA);
+    public static final Component HUNTER_LOSE_COMPONENT = Component.translatable("random_mh.general.lose.hunter").withStyle(ChatFormatting.RED);
 
     public static final Component BOSSBAR_SPEEDRUNNER_COMPONENT = Component.literal("Hide!");
     public static final Component BOSSBAR_HUNTER_COMPONENT = Component.literal("Find speedrunner!");
 
     public enum MhRole {
-        NULL("null", Component.empty(), Component.empty(), BossEvent.BossBarColor.WHITE),
-        SPEEDRUNNER("speedrunner", SPEEDRUNNER_COMPONENT, BOSSBAR_SPEEDRUNNER_COMPONENT, BossEvent.BossBarColor.BLUE),
-        HUNTER("hunter", HUNTER_COMPONENT, BOSSBAR_HUNTER_COMPONENT, BossEvent.BossBarColor.RED);
+        NULL("null", Component.empty(), Component.empty(), BossEvent.BossBarColor.WHITE, Component.empty(), Component.empty()),
+        SPEEDRUNNER("speedrunner", SPEEDRUNNER_COMPONENT, BOSSBAR_SPEEDRUNNER_COMPONENT, BossEvent.BossBarColor.BLUE, SPEEDRUNNER_WON_COMPONENT, SPEEDRUNNER_LOSE_COMPONENT),
+        HUNTER("hunter", HUNTER_COMPONENT, BOSSBAR_HUNTER_COMPONENT, BossEvent.BossBarColor.RED, HUNTER_WON_COMPONENT, HUNTER_LOSE_COMPONENT);
 
         private final String name;
         private final Component titleComponent;
         private final Component bossBarComponent;
         private final BossEvent.BossBarColor bossBarColor;
-        MhRole(String name, Component titleComponent, Component bossBarComponent, BossEvent.BossBarColor bossBarColor) {
+        private final Component wonComponent;
+        private final Component loseComponent;
+
+        MhRole(String name, Component titleComponent, Component bossBarComponent, BossEvent.BossBarColor bossBarColor, Component wonComponent, Component loseComponent) {
             this.name = name;
             this.titleComponent = titleComponent;
             this.bossBarComponent = bossBarComponent;
             this.bossBarColor = bossBarColor;
+            this.wonComponent = wonComponent;
+            this.loseComponent = loseComponent;
         }
         public String asString() {
             return name;
@@ -52,6 +63,12 @@ public class RandomMhHelper {
         }
         public BossEvent.BossBarColor getBossBarColor() {
             return bossBarColor;
+        }
+        public Component getWonComponent() {
+            return wonComponent;
+        }
+        public Component getLoseComponent() {
+            return loseComponent;
         }
 
         @Contract(pure = true)
@@ -77,8 +94,8 @@ public class RandomMhHelper {
         };
     }
 
-    private static final ArrayList<ServerPlayer> speedrunners = new ArrayList<>();
-    private static final ArrayList<ServerPlayer> hunters = new ArrayList<>();
+    private static final ArrayList<String> speedrunners = new ArrayList<>();
+    private static final ArrayList<String> hunters = new ArrayList<>();
     private static RandomMhGameConfig config;
     private static int t = -1;
 
@@ -92,12 +109,12 @@ public class RandomMhHelper {
         var playersCount = new AtomicInteger(players.size());
         players.forEach(pl -> {
             if (pl.getRandom().nextFloat() <= (float) maxSpeedrunnersCount.get() / playersCount.get()) {
-                speedrunners.add(pl);
+                speedrunners.add(pl.getGameProfile().name());
                 pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.SPEEDRUNNER.getTitleComponent()));
                 NetworkManager.sendToPlayer(pl, new RolePayload(MhRole.SPEEDRUNNER));
                 maxSpeedrunnersCount.getAndDecrement();
             } else {
-                hunters.add(pl);
+                hunters.add(pl.getGameProfile().name());
                 pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.HUNTER.getTitleComponent()));
                 NetworkManager.sendToPlayer(pl, new RolePayload(MhRole.HUNTER));
             }
@@ -125,14 +142,54 @@ public class RandomMhHelper {
             return;
         }
 
-        speedrunners.forEach(pl -> NetworkManager.sendToPlayer(pl, new TickRandomMhBossBarPayload(t, config.randomisationTime())));
-        hunters.forEach(pl -> NetworkManager.sendToPlayer(pl, new TickRandomMhBossBarPayload(t, config.randomisationTime())));
+        speedrunners.forEach(pl -> NetworkManager.sendToPlayer(Objects.requireNonNull(server.getPlayerList().getPlayer(pl)), new TickRandomMhBossBarPayload(t, config.randomisationTime())));
+        hunters.forEach(pl -> NetworkManager.sendToPlayer(Objects.requireNonNull(server.getPlayerList().getPlayer(pl)), new TickRandomMhBossBarPayload(t, config.randomisationTime())));
         t++;
     }
 
-    public static MhRole getRole(ServerPlayer player) {
-        if (speedrunners.contains(player)) return MhRole.SPEEDRUNNER;
-        else if (hunters.contains(player)) return MhRole.HUNTER;
+    public static MhRole getRole(String nickname) {
+        if (speedrunners.contains(nickname)) return MhRole.SPEEDRUNNER;
+        else if (hunters.contains(nickname)) return MhRole.HUNTER;
         return MhRole.NULL;
+    }
+
+
+    public static boolean shouldEndGameWithHuntersWin(@NotNull MinecraftServer server) {
+        return server.getPlayerList().getPlayers().stream().allMatch(pl ->
+            getRole(pl.getGameProfile().name()) == MhRole.HUNTER || pl.gameMode() == GameType.SPECTATOR);
+    }
+    public static boolean canEndGameWithSpeedrunnersWin(@NotNull MinecraftServer server) {
+        return speedrunners.stream().anyMatch(n -> {
+            var pl = server.getPlayerList().getPlayer(n);
+            if (pl != null)
+                return pl.level().dimension().equals(Level.END);
+            return false;
+        });
+    }
+    public static void endWithHuntersWin(MinecraftServer server) {
+        hunters.forEach(n -> {
+            var pl = server.getPlayerList().getPlayer(n);
+            if (pl != null)
+                pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.HUNTER.getWonComponent()));
+        });
+        speedrunners.forEach(n -> {
+            var pl = server.getPlayerList().getPlayer(n);
+            if (pl != null)
+                pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.SPEEDRUNNER.getLoseComponent()));
+        });
+        RandomMhHelper.stop(server);
+    }
+    public static void endWithSpeedrunnersWin(MinecraftServer server) {
+        speedrunners.forEach(n -> {
+            var pl = server.getPlayerList().getPlayer(n);
+            if (pl != null)
+                pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.SPEEDRUNNER.getWonComponent()));
+        });
+        hunters.forEach(n -> {
+            var pl = server.getPlayerList().getPlayer(n);
+            if (pl != null)
+                pl.connection.send(new ClientboundSetTitleTextPacket(MhRole.HUNTER.getLoseComponent()));
+        });
+        RandomMhHelper.stop(server);
     }
 }

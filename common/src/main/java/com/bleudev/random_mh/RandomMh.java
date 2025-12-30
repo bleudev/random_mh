@@ -2,21 +2,30 @@ package com.bleudev.random_mh;
 
 import com.bleudev.random_mh.config.RandomMhGameConfig;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
+import dev.architectury.event.events.common.EntityEvent;
 import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.level.GameType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
 
+import static com.bleudev.random_mh.RandomMhHelper.endWithHuntersWin;
+import static com.bleudev.random_mh.RandomMhHelper.endWithSpeedrunnersWin;
+
 public final class RandomMh {
     public static final String MOD_ID = "random_mh";
 
-    public static Identifier getIdentifier(String path) {
+    @Contract("_ -> new")
+    public static @NotNull Identifier getIdentifier(String path) {
         return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 
@@ -38,7 +47,7 @@ public final class RandomMh {
                             ctx.getSource().sendFailure(Component.translatable("commands.random_mh.role.failure.not_a_player"));
                             return -1;
                         }
-                        var c = RandomMhHelper.getRole(pl).getTitleComponent();
+                        var c = RandomMhHelper.getRole(pl.getGameProfile().name()).getTitleComponent();
                         if (!c.getString().isEmpty())
                             ctx.getSource().sendSuccess(() -> c, false);
                         return 1;
@@ -60,7 +69,7 @@ public final class RandomMh {
 
                             @Override
                             public int randomisationTime() {
-                                return 200;
+                                return 2000;
                             }
                         });
                         return 1;
@@ -74,5 +83,17 @@ public final class RandomMh {
                     })));
         });
         TickEvent.SERVER_POST.register(RandomMhHelper::tick);
+        EntityEvent.LIVING_DEATH.register((e, source) -> {
+            if (!RandomMhHelper.isStarted()) return EventResult.interruptDefault();
+            if (e instanceof ServerPlayer player && RandomMhHelper.getRole(player.getGameProfile().name()) == RandomMhHelper.MhRole.SPEEDRUNNER) {
+                player.setGameMode(GameType.SPECTATOR);
+                var s = e.level().getServer();
+                if (RandomMhHelper.shouldEndGameWithHuntersWin(s)) endWithHuntersWin(s);
+            } else if (e instanceof EnderDragon) {
+                var s = e.level().getServer();
+                if (s != null && RandomMhHelper.canEndGameWithSpeedrunnersWin(s)) endWithSpeedrunnersWin(s);
+            }
+            return EventResult.interruptDefault();
+        });
     }
 }
