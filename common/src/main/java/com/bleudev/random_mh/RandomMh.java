@@ -1,7 +1,11 @@
 package com.bleudev.random_mh;
 
 import com.bleudev.random_mh.config.RandomMhGameConfig;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.EntityEvent;
@@ -34,6 +38,9 @@ public final class RandomMh {
     private static @NotNull LiteralArgumentBuilder<CommandSourceStack> createLiteral(String name) {
         return LiteralArgumentBuilder.literal(name);
     }
+    private static <T> @NotNull RequiredArgumentBuilder<CommandSourceStack, T> createArgument(String name, ArgumentType<T> type) {
+        return RequiredArgumentBuilder.argument(name, type);
+    }
 
     public static void init() {
         Predicate<CommandSourceStack> requireAdmin = s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
@@ -54,26 +61,24 @@ public final class RandomMh {
                     }))
                 .then(createLiteral("start")
                     .requires(requireAdmin)
-                    .executes(ctx -> {
-                        ctx.getSource().sendSuccess(() -> Component.translatable("commands.random_mh.start.success"), false);
-                        RandomMhHelper.start(ctx.getSource().getServer(), new RandomMhGameConfig() {
-                            @Override
-                            public int speedrunnersCount() {
-                                return 1;
-                            }
-
-                            @Override
-                            public boolean shouldRandomiseSpeedrunners() {
-                                return true;
-                            }
-
-                            @Override
-                            public int randomisationTime() {
-                                return 2000;
-                            }
-                        });
-                        return 1;
-                    }))
+                    .then(createArgument("speedrunners_count", IntegerArgumentType.integer(0))
+                        .then(createArgument("should_randomise_speedrunners", BoolArgumentType.bool())
+                            .then(createArgument("randomisation_time", IntegerArgumentType.integer(0))
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("commands.random_mh.start.success"), false);
+                                    RandomMhHelper.start(ctx.getSource().getServer(), new RandomMhGameConfig() {
+                                        @Override public int speedrunnersCount() {
+                                            return IntegerArgumentType.getInteger(ctx, "speedrunners_count");
+                                        }
+                                        @Override public boolean shouldRandomiseSpeedrunners() {
+                                            return BoolArgumentType.getBool(ctx, "should_randomise_speedrunners");
+                                        }
+                                        @Override public int randomisationTime() {
+                                            return IntegerArgumentType.getInteger(ctx, "randomisation_time");
+                                        }
+                                    });
+                                    return 1;
+                                })))))
                 .then(createLiteral("stop")
                     .requires(requireAdmin)
                     .executes(ctx -> {
