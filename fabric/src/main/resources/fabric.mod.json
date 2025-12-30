@@ -3,14 +3,16 @@
     "id": "random_mh",
     "version": "${version}",
     "name": "Random ManHunt",
-    "description": "",
+    "description": "Random manhunt! No more words needed.",
     "authors": [
-        ""
+        "bleudev"
     ],
     "contact": {
-        "homepage": ""
+        "homepage": "https://github.com/bleudev/random_mh",
+        "issues": "https://github.com/bleudev/random_mh/issues",
+        "sources": "https://github.com/bleudev/random_mh.git"
     },
-    "license": "All-Rights-Reserved",
+    "license": "MIT",
     "icon": "assets/random_mh/icon.png",
     "environment": "*",
     "entrypoints": {

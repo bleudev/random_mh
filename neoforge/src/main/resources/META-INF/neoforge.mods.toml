@@ -7,7 +7,7 @@ license = "All Rights Reserved"
 modId = "random_mh"
 version = "${version}"
 displayName = "Random ManHunt"
-authors = ""
+authors = "bleudev"
 description = '''
 Random manhunt! No more words needed.
 '''
