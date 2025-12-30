@@ -9,9 +9,9 @@ version = "${version}"
 displayName = "Random ManHunt"
 authors = ""
 description = '''
-
+Random manhunt! No more words needed.
 '''
-#logoFile = ""
+logoFile = "assets/random_mh/icon.png"
 
 [[dependencies.random_mh]]
 modId = "neoforge"
