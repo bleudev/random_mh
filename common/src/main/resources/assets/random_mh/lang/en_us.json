@@ -5,6 +5,8 @@
     "random_mh.general.lose.speedrunner": "You lose!",
     "random_mh.general.won.hunter": "You won!",
     "random_mh.general.lose.hunter": "You lose!",
+    "random_mh.general.bossbar.speedrunner": "Beat the game before the hunters find you!",
+    "random_mh.general.bossbar.hunter": "Kill the speedrunners before they beat the game!",
     "commands.random_mh.role.failure.not_a_player": "You are not a player!",
     "commands.random_mh.start.success": "Manhunt is starting!",
     "commands.random_mh.stop.success": "Manhunt was stoped!"

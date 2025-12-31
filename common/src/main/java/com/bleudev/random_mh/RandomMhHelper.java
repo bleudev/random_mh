@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RandomMhHelper {
@@ -29,8 +28,8 @@ public class RandomMhHelper {
     public static final Component SPEEDRUNNER_LOSE_COMPONENT = Component.translatable("random_mh.general.lose.speedrunner").withStyle(ChatFormatting.AQUA);
     public static final Component HUNTER_LOSE_COMPONENT = Component.translatable("random_mh.general.lose.hunter").withStyle(ChatFormatting.RED);
 
-    public static final Component BOSSBAR_SPEEDRUNNER_COMPONENT = Component.literal("Hide!");
-    public static final Component BOSSBAR_HUNTER_COMPONENT = Component.literal("Find speedrunner!");
+    public static final Component BOSSBAR_SPEEDRUNNER_COMPONENT = Component.translatable("random_mh.general.bossbar.speedrunner");
+    public static final Component BOSSBAR_HUNTER_COMPONENT = Component.translatable("random_mh.general.bossbar.hunter");
 
     public enum MhRole {
         NULL("null", Component.empty(), Component.empty(), BossEvent.BossBarColor.WHITE, Component.empty(), Component.empty()),
@@ -142,8 +141,10 @@ public class RandomMhHelper {
             return;
         }
 
-        speedrunners.forEach(pl -> NetworkManager.sendToPlayer(Objects.requireNonNull(server.getPlayerList().getPlayer(pl)), new TickRandomMhBossBarPayload(t, config.randomisationTime())));
-        hunters.forEach(pl -> NetworkManager.sendToPlayer(Objects.requireNonNull(server.getPlayerList().getPlayer(pl)), new TickRandomMhBossBarPayload(t, config.randomisationTime())));
+        server.getPlayerList().getPlayers().forEach(pl -> {
+            if (getRole(pl.getGameProfile().name()) != MhRole.NULL)
+                NetworkManager.sendToPlayer(pl, new TickRandomMhBossBarPayload(t, config.randomisationTime()));
+        });
         t++;
     }
 

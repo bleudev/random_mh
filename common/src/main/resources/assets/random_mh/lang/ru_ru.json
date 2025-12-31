@@ -1,0 +1,13 @@
+{
+    "random_mh.general.you_are_speedrunner": "Ты спидранер!",
+    "random_mh.general.you_are_hunter": "Ты охотник!",
+    "random_mh.general.won.speedrunner": "Ты выиграл!",
+    "random_mh.general.lose.speedrunner": "Ты проиграл!",
+    "random_mh.general.won.hunter": "Ты выиграл!",
+    "random_mh.general.lose.hunter": "Ты проиграл!",
+    "random_mh.general.bossbar.speedrunner": "Пройди игру, пока охотники не нашли тебя!",
+    "random_mh.general.bossbar.hunter": "Убей спидранеров, пока они не прошли игру!",
+    "commands.random_mh.role.failure.not_a_player": "Вы не являетесь игроком.",
+    "commands.random_mh.start.success": "Охота начинается!",
+    "commands.random_mh.stop.success": "Охота завершена!"
+}
